@@ -1,2 +1,5 @@
 *.swp
 bochslog.txt
+*.o
+*.bin
+*.iso
