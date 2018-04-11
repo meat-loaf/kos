@@ -13,21 +13,21 @@
 .align 16
 #smol stack; we'll set up a proper stack when we get to long mode
 stack_bottom:
-	.lcomm stk,128
+	.skip 128
 stack_top:
 #set up blank space for page tables; set these up at runtime
-pml4:
+#pml4:
 	#.lcomm p4, 512*8
-	.skip 512*8
-pdpt:
+#	.skip 512*8
+#pdpt:
 #	.lcomm p3, 512*8
-	.skip 512*8
-pdp:
+#	.skip 512*8
+#pdp:
 #	.lcomm p2, 512*8
-	.skip 512*8
-pt:
+#	.skip 512*8
+#pt:
 #	.lcomm p1, 512*8
-	.SKIP 512*8
+#	.SKIP 512*8
 #note: all this code is run in 32-bit protected mode, as that
 #is how grub hands off the machine...need to check for long mode
 #and set up page table, interrupt table, etc
@@ -35,7 +35,7 @@ pt:
 .global _start
 .type _start, @function
 _start:
-	xchgw	%bx, %bx		#bochs magic breakpoint
+#	xchgw	%bx, %bx		#bochs magic breakpoint
 	movl	$stack_top, %esp	#set up the stack
 	movl	$stack_top, %ebp
 	call	chk_x64
@@ -98,64 +98,51 @@ enter_x64_long:
 	# make a proper mapping later but this works for now
 set_up_paging:
 	xchgw	%bx, %bx		#bochs magic breakpoint
-.pt_init:
-	#manually set up the page table at address $0x1000
-#	mov	$0x1000, %edi
-#	mov	%edi, %cr3
-#	xor	%eax, %eax
+	#identity map first 2 megabytes	
+	#eventually do memcheck/move this to C but this is ok for now...
+	#courtesy of OSDEV Wiki
+#	std
 #	mov	$4096, %ecx
-#	rep stosl
-#	mov	%cr3, %edi
-#	movl	$0x2003, (%edi)
-#	add	$0x1000, %edi
-#	movl	$0x3003, (%edi)
-#	add	$0x1000, %edi
-#	movl	$0x4003, (%edi)
-#	add	$0x1000, %edi
-#	mov	0x00000003, %ebx
-#	mov	$512, %ecx
-.setentry:
-#	mov	%ebx, (%edi)
-#	add	$0x1000, %ebx
-#	add	$8, %edi
-#	loop .setentry
-	mov	pml4, %eax
-	or	%eax, 0b11
-	mov	%eax, pml4
-	mov	pdpt, %eax
-	or	%eax, 0b11
-	mov	%eax, pdpt
 	xor	%ecx, %ecx
-.map_loop:
-	mov	$0x200000, %eax
-	mul	%ecx
-	or	0b10000011, %eax	#present, writable + huge
-	mov	pdp, %ebx
-	mov	%eax, (%ebx, %ecx, 8)
-	inc	%ecx
-	cmp	$512, %ecx
-	jne	.map_loop
-.enable:
-	xchgw	%bx, %bx		#bochs magic breakpoint
-	#at this point, entire first GB of memory is identity mapped
-	mov	pml4, %eax
-	#set the page table
-	mov	%eax, %cr3
-	mov	%cr4, %eax
-#	#set long mode bit in EFER MSR
+	mov	$0x1000, %edi
+	mov	%edi, %cr3
+	xor	%eax, %eax
+.nullLoop:
+	movl 	$0x0, (%edi, %ecx)
+	add	$0x4, %ecx
+	cmp	$4096, %ecx
+	jnz .nullLoop
+#	rep	stosl
+	mov	%cr3, %edi
+	movl	$0x2003, (%edi)
+	add	$0x1000, %edi
+	movl	$0x3003, (%edi)
+	add	$0x1000, %edi
+	movl	$0x4003, (%edi)
+	add	$0x1000, %edi
+	
+	mov 	$0x00000003, %ebx
+	mov	$512, %ecx
+.SetEntry:
+	mov	%ebx, %edi
+	add	$0x1000, %ebx
+	add	$8, %edi
+	loop	.SetEntry
+
+	mov 	%cr4, %ebx
 	or	1 << 5, %eax
 	mov	%eax, %cr4
-	mov	$0xC000008, %ecx
+
+	mov	$0xC0000080, %ecx
 	rdmsr
-	or 	1 << 8, %eax
+	or	1 << 8, %eax
 	wrmsr
-#	#enable paging in %cr0
-	mov %cr0, %eax
-	or  1 << 31 | 1 << 0, %eax
-	mov %eax, %cr0
-#	#paging should be enabled now; set up gdt
-	push $msg_ok_x64_support
-	call term_dump_error
+	
+	mov	%cr0, %eax
+	or	1 << 31, %eax
+	mov	%eax, %cr0
+	push	$msg_ok_x64_support
+	call	term_dump_error
 	mov	%ebp, %esp
 	pop	%ebp
 #	jmp _kmain
