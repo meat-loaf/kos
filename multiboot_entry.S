@@ -38,10 +38,9 @@ _start:
 #	xchgw	%bx, %bx		#bochs magic breakpoint
 	movl	$stack_top, %esp	#set up the stack
 	movl	$stack_top, %ebp
-	call	chk_x64
-	call	enter_x64_long		#set up paging, lgdt
-_kmain:
-	call	kmain			#need to load x64-compiled actual kernel and jump to it
+	jmp chk_x64
+ex64:	jmp enter_x64_long		#set up paging, lgdt
+_kmain:	call	kmain			#need to load x64-compiled actual kernel and jump to it
 	cli
 _hang:
 	jmp	_hang
@@ -67,13 +66,14 @@ chk_x64:
 	jb	no_ext_cpuid		# if less, we do not have extended cpuid
 	mov	$0x80000001, %eax
 	cpuid				# call cpuid with 0x80000001
-	test	1 << 29, %edx		# if LM-bit (29) set in edx after call, we can use long mode
+	test	$(1 << 29), %edx		# if LM-bit (29) set in edx after call, we can use long mode
 	jz	no_x64_long
 	popf
 #	jmp enter_x64_long
 	mov	%ebp, %esp
 	pop	%ebp
-	ret
+#	ret
+	jmp ex64
 #we are in prot 32-bit, args pushed onto stack here...
 no_cpuid:
 	push	$msg_no_cpuid
@@ -89,20 +89,23 @@ dmp:
 	jmp	_hang
 .type enter_x64_long, @function
 enter_x64_long:
-	push	%ebp
-	mov	%esp, %ebp
+	#push	%ebp
+	#mov	%esp, %ebp
 	# set up page tables (badly) for now
 	# can probably just do this with a macro or something(?)
 	# figure it out later...
 	# for now identity map first GB of address space with hyooge (2MiB) pages
 	# make a proper mapping later but this works for now
 set_up_paging:
-	xchgw	%bx, %bx		#bochs magic breakpoint
-	#identity map first 2 megabytes	
-	#eventually do memcheck/move this to C but this is ok for now...
-	#courtesy of OSDEV Wiki
+	# identity map first 2 megabytes	
+	# eventually do memcheck/move this to C but this is ok for now...
+	# courtesy of OSDEV Wiki
 #	std
 #	mov	$4096, %ecx
+	xchgw	%bx, %bx		#bochs magic breakpoint
+	mov	%cr0, %eax
+	and	$0b01111111111111111111111111111111, %eax
+	mov	%eax, %cr0
 	xor	%ecx, %ecx
 	mov	$0x1000, %edi
 	mov	%edi, %cr3
@@ -124,29 +127,29 @@ set_up_paging:
 	mov 	$0x00000003, %ebx
 	mov	$512, %ecx
 .SetEntry:
-	mov	%ebx, %edi
+	mov	%ebx, (%edi)
 	add	$0x1000, %ebx
 	add	$8, %edi
 	loop	.SetEntry
-
+	xchgw	%bx, %bx		#bochs magic breakpoint
 	mov 	%cr4, %ebx
-	or	1 << 5, %eax
+	or	$(1 << 5), %eax
 	mov	%eax, %cr4
 
 	mov	$0xC0000080, %ecx
 	rdmsr
-	or	1 << 8, %eax
+	or	$(1 << 8), %eax
 	wrmsr
 	
 	mov	%cr0, %eax
-	or	1 << 31, %eax
+	or	$(1 << 31), %eax
 	mov	%eax, %cr0
-	push	$msg_ok_x64_support
-	call	term_dump_error
-	mov	%ebp, %esp
-	pop	%ebp
-#	jmp _kmain
-	ret
+	#push	$msg_ok_x64_support
+	#call	term_dump_error
+	#mov	%ebp, %esp
+	#pop	%ebp
+	jmp _kmain
+#	ret
 .data
 
 gdtdesc64:
