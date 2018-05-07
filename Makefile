@@ -45,4 +45,4 @@ set_gdt.o: set_gdt.S
 bochs: default
 	bochs -f bochsrc.conf -q
 clean:
-	rm -rf *.o kos.bin ./runimage
+	rm -rf *.o kos.bin *.iso ./runimage
