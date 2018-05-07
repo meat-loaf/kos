@@ -3,3 +3,4 @@ bochslog.txt
 *.o
 *.bin
 *.iso
+runimage/

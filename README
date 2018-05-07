@@ -1,0 +1,6 @@
+Now with proper makefile.
+
+'make' builds the project. 
+'make bochs' builds and runs bochs.
+
+more to come...
