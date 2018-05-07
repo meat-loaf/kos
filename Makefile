@@ -22,21 +22,27 @@ grub_mkiso: grub_setup
 grub_setup: loader
 	mkdir -p $(GRUB_HIERARCHY); \
 	if [ ! -f $(GRUB_HIERARCHY)/grub.cfg ]; then \
-	echo -e 'set default = 0\nset timeout = 2\nmenuentry "KOS" {\nmultiboot /boot/kos.bin\n}' > \
+	echo 'set default = 0\nset timeout = 2\nmenuentry "KOS" {\nmultiboot /boot/kos.bin\n}' > \
 	$(GRUB_HIERARCHY)/grub.cfg; \
 	fi; 
  
 
-loader:	bootasm.o kload_main.o
-	$(CC) $(CLINKSCRIPT) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o
+loader:	bootasm.o kload_main.o set_gdt.o gdt.o
+	$(CC) $(CLINKSCRIPT) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o set_gdt.o gdt.o
 
-kload_main.o: kload_main.c
-	$(CC) -c kload_main.c -o kload_main.o $(CFLAGS)	$(C32BIT)
+kload_main.o: kload_main.c set_gdt.o gdt.o
+	$(CC) -c kload_main.c -o kload_main.o $(CFLAGS)	$(C32BIT) set_gdt.o gdt.o
+
+gdt.o: gdt.c
+	$(CC) -c gdt.c -o gdt.o $(CFLAGS) $(C32BIT)
 
 bootasm.o: entryasm.S
 	$(AS) $(ASFLAGS32) -o bootasm.o entryasm.S
 
+set_gdt.o: set_gdt.S
+	$(AS) $(ASFLAGS32) -o set_gdt.o set_gdt.S
+
 bochs: default
 	bochs -f bochsrc.conf -q
 clean:
-	rm *.o kos.bin
+	rm -rf *.o kos.bin ./runimage
