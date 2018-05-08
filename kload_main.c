@@ -3,21 +3,24 @@
 
 void kpanic(char *);
 void dump(char *);
-//TODO extern?
 void
 kload_main(const void* mboot_struct){
-	struct gdt gdt_entries[NUMGDTENTRIES];
-	struct gdtdesc gdtd;
-//	kpanic("test!");
-	//null descriptor
-	encode_gdt_entry(&(gdt_entries[0]), 0x0, 0x0, 0x0);
-	encode_gdt_entry(&(gdt_entries[1]), 0x0, 0xFFFFFFFF, 0x9A);
-	encode_gdt_entry(&(gdt_entries[2]), 0x0, 0xFFFFFFFF, 0x92);
-//	encode_gdt_entry(&gdt_entries[3], 0x0, 0xFFFFFFFF, 0x89); //TSS?
-	gdtd.size = sizeof(struct gdt) * NUMGDTENTRIES;
-	gdtd.offset = &gdt_entries;
-	set_gdt(&gdtd);
-	kpanic("GDT LOADED; SEGMENTS RESET!"); 
+
+//following several lines courtesy of OSDEV WIKI
+	const multiboot_info_t* mb_info = mboot_struct;
+	multiboot_uint32_t mb_flags = mb_info->flags;
+	dump("hello!");	
+//	void *main64 = 0x0;
+	if (mb_flags & MULTIBOOT_INFO_MODS){
+		multiboot_uint32_t mods_count = mb_info->mods_count;
+		multiboot_uint32_t mods_addr = mb_info->mods_addr;
+		for (uint32_t mod = 0; mod < mods_count; mod++){
+			multiboot_module_t* module = 
+				(multiboot_module_t*)(mods_addr + (mod * sizeof(multiboot_module_t)));
+				dump((char *)module->cmdline);
+		} 
+	}
+	//check cpuid
 	return;
 }
 
@@ -34,7 +37,7 @@ kpanic(char *msg){
 //TODO write a goddamn terminal controller
 void
 dump(char *msg){
-	char * vga = 0xB8000;
+	char * vga = (char *) 0xB8000;
 	int i = 0;
 	while (msg[i]){
 		vga[i*2] = msg[i];
