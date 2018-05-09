@@ -11,11 +11,12 @@ kload_main(const void* mboot_struct){
 	multiboot_uint32_t mb_flags = mb_info->flags;
 	dump("hello!");	
 //	void *main64 = 0x0;
+	multiboot_module_t* module = (multiboot_module_t*) 0x0;
 	if (mb_flags & MULTIBOOT_INFO_MODS){
 		multiboot_uint32_t mods_count = mb_info->mods_count;
 		multiboot_uint32_t mods_addr = mb_info->mods_addr;
 		for (uint32_t mod = 0; mod < mods_count; mod++){
-			multiboot_module_t* module = 
+			 module = 
 				(multiboot_module_t*)(mods_addr + (mod * sizeof(multiboot_module_t)));
 				dump((char *)module->cmdline);
 		} 
