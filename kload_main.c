@@ -3,10 +3,11 @@
 
 void kpanic(char *);
 void dump(char *);
+int strcmp(char *, char *);
 void
 kload_main(const void* mboot_struct){
-
-//following several lines courtesy of OSDEV WIKI
+	//set up 32bitGDT
+	//following several lines courtesy of OSDEV WIKI
 	const multiboot_info_t* mb_info = mboot_struct;
 	multiboot_uint32_t mb_flags = mb_info->flags;
 	dump("hello!");	
@@ -19,6 +20,10 @@ kload_main(const void* mboot_struct){
 			 module = 
 				(multiboot_module_t*)(mods_addr + (mod * sizeof(multiboot_module_t)));
 				dump((char *)module->cmdline);
+				if (strcmp((char *)module->cmdline, "KERN64.BIN")){
+					//load the kernel...
+								
+				}
 		} 
 	}
 	//check cpuid
@@ -29,7 +34,14 @@ kload_main(const void* mboot_struct){
 lgdt(struct gdtdesc *gdtd){
 	asm("lgdt %0" :: "m"(gdtd));
 }*/
-
+int strcmp(char *l, char *r){
+	unsigned char * p1 = l, *p2 = r;
+	while (*p1 == *p2){
+		p1++;
+		p2++;
+	}
+	return (*p1)-(*p2);
+}
 void
 kpanic(char *msg){
 	dump(msg);

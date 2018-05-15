@@ -1,6 +1,8 @@
 #ifndef _KOS_ELF_H
 #define _KOS_ELF_H
 
+#define ELF_MAGIC	0x464C457FU	//0x7FELF (little endian)
+
 #define EL_MAG0		0	
 #define	EL_MAG1		1
 #define	EL_MAG2		2
@@ -22,7 +24,7 @@ typedef uint32_t Elf64_Word;
 typedef uint64_t Elf64_Xword;
 typedef int64_t  Elf64_Sxword;
 
-typedef struct elf64_hdr {
+typedef struct {
 	unsigned char e_ident[EI_NIDENT];	// ELF magic number (\x7FELF)
 	Elf64_Half e_type;
 	Elf64_Half e_machine;
@@ -38,3 +40,14 @@ typedef struct elf64_hdr {
 	Elf64_Half e_shnum;
 	Elf64_Half e_shstrndx;
 } Elf64_Ehdr;
+
+typedef struct {
+	Elf64_Word p_type;
+	Elf64_Word p_flags;
+	Elf64_Off p_offset;
+	Elf64_Addr p_vaddr;
+	Elf64_Addr p_addr;
+	Elf64_Xword p_filesz;
+	Elf64_Xword p_memsz;
+	Elf64_Xword p_align;
+} Elf64_Phdr;

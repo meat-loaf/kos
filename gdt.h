@@ -1,22 +1,22 @@
 #include <stdint.h>
 #define NUMGDTENTRIES 3
+//xv6 source helped with struct definition
 struct gdt{
-	uint16_t limit_low16;
-	uint16_t base_low16;
-	uint8_t	base_mid8;
-	uint8_t access;
-	//low nibble is 16:19 of limit
-	//high nibble is flags field
-	uint8_t limit_mid8_flags;
-	uint8_t base_high8;
-} __attribute__ ((packed));
-
-struct gdtdesc{
-	//valid gdtsizes are [1, 65536],
-	//so we store size as size-1
-	uint16_t size;
-	uint32_t offset;
-} __attribute__((packed));
+	uint32_t lim_15_0 : 16;
+	uint32_t base_15_0 : 16;
+	uint32_t base_16_23 : 8;
+	uint32_t type : 4;
+	//following 3 fields are access bits
+	uint32_t sys_lvl : 1;	//0 = sys, 1 = application
+	uint32_t dpl : 2	//descriptor privilege level
+	uint32_t p : 1; 	//present
+	uint32_t lim_19_16 : 4;
+	uint32_t avl : 1; 	//unused; avail for software
+	uint32_t rsv1 : 1;	//reserved
+	uint32_t db : 1;	//0 - 16 bit seg; 1 - 32 bit seg
+	uint32_t gran : 1;	//granularity -- byte (0) vs page (1) scaling
+	uint32_t base_31_24 : 8;
+};
 
 void set_gdt(struct gdtdesc *);
 void encode_gdt_entry(struct gdt *, uint32_t, uint32_t, uint8_t);
