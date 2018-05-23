@@ -13,9 +13,9 @@ LOADER_TARGET = kos.bin
 GRUB_ROOT_DIR =  ./runimage
 GRUB_HIERARCHY = $(GRUB_ROOT_DIR)/boot/grub
 
-default: grub_mkiso
+default: grub_mkiso kos.iso
 
-grub_mkiso: grub_setup
+grub_mkiso: grub_setup 
 	cp kos.bin ./runimage/boot/kos.bin;	  \
 	cp kern64.bin ./runimage/boot/kern64.bin; \
 	grub-mkrescue -o kos.iso $(GRUB_ROOT_DIR)/
@@ -28,7 +28,7 @@ grub_setup: loader kern64.bin
 	fi; 
  
 
-loader:	bootasm.o kload_main.o set_gdt.o gdt.o
+loader:	bootasm.o kload_main.o gdt.o
 	$(CC) $(CLINKSCRIPT) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o set_gdt.o gdt.o
 
 kload_main.o: kload_main.c

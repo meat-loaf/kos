@@ -1,12 +1,20 @@
 #include "multiboot.h"
 #include "gdt.h"
 
+extern struct segment_desc gdt[NUMSEG];
+
 void kpanic(char *);
 void dump(char *);
 int strcmp(char *, char *);
+inline void bochs_bp(void);
+
 void
 kload_main(const void* mboot_struct){
 	//set up 32bitGDT
+	bochs_bp();
+	init_segments();
+	lgdt(gdt, sizeof(gdt));
+	loadsegs();
 	//following several lines courtesy of OSDEV WIKI
 	const multiboot_info_t* mb_info = mboot_struct;
 	multiboot_uint32_t mb_flags = mb_info->flags;
@@ -26,16 +34,12 @@ kload_main(const void* mboot_struct){
 				}
 		} 
 	}
-	//check cpuid
+	 //check cpuid
 	return;
 }
 
-/*void
-lgdt(struct gdtdesc *gdtd){
-	asm("lgdt %0" :: "m"(gdtd));
-}*/
 int strcmp(char *l, char *r){
-	unsigned char * p1 = l, *p2 = r;
+	unsigned char *p1 = l, *p2 = r;
 	while (*p1 == *p2){
 		p1++;
 		p2++;
@@ -56,5 +60,11 @@ dump(char *msg){
 		vga[i*2] = msg[i];
 		i++;
 	}
+	return;
+}
+
+inline void
+bochs_bp(void){
+	asm("xchg %bx, %bx");
 	return;
 }
