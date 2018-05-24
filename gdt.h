@@ -12,7 +12,6 @@
 #define STA_R	0x2	// readable (exec)
 #define STA_A	0x1	//  accessed
 
-//xv6 source helped with struct definition
 struct segment_desc{
 	uint32_t lim_15_0 : 16;
 	uint32_t base_15_0 : 16;
@@ -29,7 +28,7 @@ struct segment_desc{
 	uint32_t gran : 1;	//granularity -- byte (0) vs page (1) scaling
 	uint32_t base_31_24 : 8;
 };
-
+//end from xv6 source
 struct segment_desc gdt[NUMSEG];
 
 void lgdt(struct segment_desc *, int);

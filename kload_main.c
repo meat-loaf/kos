@@ -11,14 +11,12 @@ inline void bochs_bp(void);
 void
 kload_main(const void* mboot_struct){
 	//set up 32bitGDT
-	bochs_bp();
 	init_segments();
 	lgdt(gdt, sizeof(gdt));
 	loadsegs();
 	//following several lines courtesy of OSDEV WIKI
 	const multiboot_info_t* mb_info = mboot_struct;
 	multiboot_uint32_t mb_flags = mb_info->flags;
-	dump("hello!");	
 //	void *main64 = 0x0;
 	multiboot_module_t* module = (multiboot_module_t*) 0x0;
 	if (mb_flags & MULTIBOOT_INFO_MODS){
@@ -27,10 +25,10 @@ kload_main(const void* mboot_struct){
 		for (uint32_t mod = 0; mod < mods_count; mod++){
 			 module = 
 				(multiboot_module_t*)(mods_addr + (mod * sizeof(multiboot_module_t)));
-				dump((char *)module->cmdline);
 				if (strcmp((char *)module->cmdline, "KERN64.BIN")){
 					//load the kernel...
-								
+					dump((char *)module->cmdline);
+					
 				}
 		} 
 	}

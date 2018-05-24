@@ -1,5 +1,9 @@
-#ifndef _KOS_ELF_H
-#define _KOS_ELF_H
+#ifndef MULTIBOOT_HEADER
+#include "multiboot.h"
+#endif
+
+#ifndef _KOS_ELF_H_
+#define _KOS_ELF_H_
 
 #define ELF_MAGIC	0x464C457FU	//0x7FELF (little endian)
 
@@ -51,3 +55,5 @@ typedef struct {
 	Elf64_Xword p_memsz;
 	Elf64_Xword p_align;
 } Elf64_Phdr;
+
+void *load_elf(multiboot_uint32_t, multiboot_uint32_t);

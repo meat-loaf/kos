@@ -29,7 +29,7 @@ grub_setup: loader kern64.bin
  
 
 loader:	bootasm.o kload_main.o gdt.o
-	$(CC) $(CLINKSCRIPT) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o set_gdt.o gdt.o
+	$(CC) $(CLINKSCRIPT) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o gdt.o
 
 kload_main.o: kload_main.c
 	$(CC) -c kload_main.c -o kload_main.o $(CFLAGS)	$(C32BIT)
