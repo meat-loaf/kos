@@ -13,7 +13,7 @@
 
 .section .bss
 stack_bottom:
-	.skip 256
+	.skip 512 
 stack_top:
 
 .section .text

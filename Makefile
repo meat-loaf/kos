@@ -28,10 +28,10 @@ grub_setup: loader kern64.bin
 	fi; 
  
 
-loader:	bootasm.o kload_main.o gdt.o
-	$(CC) $(CLINKSCRIPT) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o gdt.o
+loader:	bootasm.o kload_main.o gdt.o elf.o cpuid.o
+	$(CC) $(CLINKSCRIPT) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o gdt.o elf.o cpuid.o
 
-kload_main.o: kload_main.c
+kload_main.o: kload_main.c 
 	$(CC) -c kload_main.c -o kload_main.o $(CFLAGS)	$(C32BIT)
 
 gdt.o: gdt.c
@@ -39,9 +39,10 @@ gdt.o: gdt.c
 
 bootasm.o: entryasm.S
 	$(AS) $(ASFLAGS32) -o bootasm.o entryasm.S
-
-set_gdt.o: set_gdt.S
-	$(AS) $(ASFLAGS32) -o set_gdt.o set_gdt.S
+cpuid.o: cpuid.S
+	$(AS) $(ASFLAGS32) -o cpuid.o cpuid.S
+elf.o: elf.c
+	$(CC) -c elf.c -o elf.o $(CFLAGS) $(C32BIT)
 kern64.bin: main64.c
 	$(CC) main64.c $(CFLAGS) -o kern64.bin 
 bochs: default

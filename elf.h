@@ -1,10 +1,11 @@
+#include <stdint.h>
 #ifndef MULTIBOOT_HEADER
 #include "multiboot.h"
 #endif
 
 #ifndef _KOS_ELF_H_
 #define _KOS_ELF_H_
-
+#endif 
 #define ELF_MAGIC	0x464C457FU	//0x7FELF (little endian)
 
 #define EL_MAG0		0	
@@ -57,3 +58,5 @@ typedef struct {
 } Elf64_Phdr;
 
 void *load_elf(multiboot_uint32_t, multiboot_uint32_t);
+int parse_elf(void *, Elf64_Ehdr*);
+
