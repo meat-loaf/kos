@@ -1,9 +1,8 @@
-ENTRY(main64)
+ENTRY(_start)
 SECTIONS
 {
-    /* higher half 64-bit */
-    . = 0x8000000000000000; 
-    KERNEL_VMA = 0x0;
+    . = 1M;
+    KERNEL_VMA = 0x0; 
 
     .text : AT(ADDR(.text) - KERNEL_VMA)
     {
@@ -11,7 +10,7 @@ SECTIONS
 	*(.multiboot);
         *(.text)
         *(.rodata*)
-/*        . = ALIGN(4096);	*/
+/*        . = ALIGN(4096);*/
     }
 
    .data : AT(ADDR(.data) - KERNEL_VMA)

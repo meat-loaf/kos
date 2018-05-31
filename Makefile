@@ -2,7 +2,8 @@ CC = x86_64-elf-gcc
 AS = x86_64-elf-as
 
 CFLAGS = -Wall -Wextra -ffreestanding -std=gnu99 -nostdlib -mno-red-zone -O2
-CLINKSCRIPT = -T link64.ld
+CLINKSCRIPT32 = -T link32.ld
+CLINKSCRIPT64 = -T link64.ld
 C32BIT = -m32
 CFLAGS32 = $(CFLAGS) $(32BIT) -Xlinker '-melf_i386' -Xlinker '-zmax-page-size=0x1000'
 ASFLAGS32 = --32
@@ -29,7 +30,7 @@ grub_setup: loader kern64.bin
  
 
 loader:	bootasm.o kload_main.o gdt.o elf.o cpuid.o
-	$(CC) $(CLINKSCRIPT) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o gdt.o elf.o cpuid.o
+	$(CC) $(CLINKSCRIPT32) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o gdt.o elf.o cpuid.o
 
 kload_main.o: kload_main.c 
 	$(CC) -c kload_main.c -o kload_main.o $(CFLAGS)	$(C32BIT)
@@ -44,8 +45,8 @@ cpuid.o: cpuid.S
 elf.o: elf.c
 	$(CC) -c elf.c -o elf.o $(CFLAGS) $(C32BIT)
 kern64.bin: main64.c
-	$(CC) main64.c $(CFLAGS) -o kern64.bin 
+	$(CC) main64.c $(CFLAGS) -o kern64.bin $(CLINKSCRIPT64) 
 bochs: default
 	bochs -f bochsrc.conf -q
 clean:
-	rm -rf *.o kos.bin *.iso ./runimage
+	rm -rf *.o kos.bin kern64.bin *.iso ./runimage
