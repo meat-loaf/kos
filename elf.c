@@ -19,8 +19,6 @@ parse_elf(void *start, Elf64_Ehdr *header){
 
 void *
 load_elf(multiboot_uint32_t mod_start, multiboot_uint32_t mod_end){
-
-	asm volatile("xchg %bx, %bx");
 	char elf_header[sizeof(Elf64_Ehdr)];
 	Elf64_Ehdr *kern_head = (Elf64_Ehdr *)elf_header;
 	memcpy2(elf_header, (char *)mod_start, sizeof(Elf64_Ehdr));

@@ -1,7 +1,7 @@
 #include "multiboot.h"
 #include "gdt.h"
 #include "elf.h"
-
+#include"paging_defs.h"
 extern struct segment_desc gdt[NUMSEG];
 #define NULL (void *)0x0
 void kpanic(char *);
@@ -12,11 +12,10 @@ void memcpy(char *, char *, int);
 extern int check_longmode();
 
 void
-enter_x64_kern(void *entry){
+enter_x64_kern(void *entry, uint64_t *pgtab_tmp){
 	void (*efptr)() = entry;
 	if(!check_longmode()){
 		dump("longmode ok!!!!!!!");
-		asm volatile("xchg %bx, %bx");
 		efptr();
 	} else {
 		dump("64-bit not available on this processor!!");
@@ -26,6 +25,8 @@ enter_x64_kern(void *entry){
 
 void
 kload_main(const void* mboot_struct){
+	uint64_t pml4_tmp[NENTRIES];
+	
 	//set up 32bitGDT (GDTR is undefined according to multiboot spec)
 	init_segments();
 	lgdt(gdt, sizeof(gdt));
@@ -38,21 +39,16 @@ kload_main(const void* mboot_struct){
 	if (mb_flags & MULTIBOOT_INFO_MODS){
 		multiboot_uint32_t mods_count = mb_info->mods_count;
 		multiboot_uint32_t mods_addr = mb_info->mods_addr;
-		char printme[64/8 + 1] = {'0'};
-		printme[8] = '\0';
 		for (uint32_t mod = 0; mod < mods_count; mod++){
 			 module = 
 				(multiboot_module_t*)(mods_addr + (mod * sizeof(multiboot_module_t)));
 				if (strcmp((char *)module->cmdline, "KERN64.BIN")){
-					//TODO need to look at what main64 should actually be when paging is enabled;
-					//addr WILL be different...
-					asm volatile("xchg %bx, %bx");
 					main64 = load_elf(module->mod_start, module->mod_end);
 				}
-		} 
+		}
+	
 	}
-	asm volatile("xchg %bx, %bx");
-	enter_x64_kern(main64);
+	enter_x64_kern(main64, pgtab_tmp);
 	return;
 }
 
