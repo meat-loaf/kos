@@ -7,7 +7,7 @@ CLINKSCRIPT64 = -T link64.ld
 C32BIT = -m32
 CFLAGS32 = $(CFLAGS) $(32BIT) -Xlinker '-melf_i386' -Xlinker '-zmax-page-size=0x1000'
 ASFLAGS32 = --32
-
+LIBCDIR = ./libc/
 
 #target name for the bootstrapping binary
 LOADER_TARGET = kos.bin
@@ -29,15 +29,13 @@ grub_setup: loader kern64.bin
 	fi; 
  
 
-loader:	bootasm.o kload_main.o gdt.o elf.o cpuid.o
-	$(CC) $(CLINKSCRIPT32) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o gdt.o elf.o cpuid.o
+loader:	bootasm.o kload_main.o gdt.o elf.o cpuid.o ./libc/klib/strcmp.o
+	$(CC) $(CLINKSCRIPT32) $(CFLAGS32) -o $(LOADER_TARGET) bootasm.o kload_main.o gdt.o elf.o cpuid.o ./libc/klib/strcmp.o
 
 kload_main.o: kload_main.c 
 	$(CC) -c kload_main.c -o kload_main.o $(CFLAGS)	$(C32BIT)
-
 gdt.o: gdt.c
 	$(CC) -c gdt.c -o gdt.o $(CFLAGS) $(C32BIT)
-
 bootasm.o: entryasm.S
 	$(AS) $(ASFLAGS32) -o bootasm.o entryasm.S
 cpuid.o: cpuid.S
@@ -46,6 +44,10 @@ elf.o: elf.c
 	$(CC) -c elf.c -o elf.o $(CFLAGS) $(C32BIT)
 kern64.bin: main64.c
 	$(CC) main64.c $(CFLAGS) -o kern64.bin $(CLINKSCRIPT64) 
+./libc/klib/strcmp.o: libc32
+	
+libc32:
+	cd ./libc && $(MAKE) 
 bochs: default
 	bochs -f bochsrc.conf -q
 clean:

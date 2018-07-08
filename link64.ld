@@ -2,7 +2,9 @@ ENTRY(main64)
 SECTIONS
 {
     /* higher half 64-bit */
-    . = 0x8000000000000000; 
+    /* TODO soon (?) */
+    /*. = 0x8000000000000000; */
+    . = 0x200000;
     KERNEL_VMA = 0x0;
 
     .text : AT(ADDR(.text) - KERNEL_VMA)

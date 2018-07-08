@@ -1,21 +1,22 @@
 #include "multiboot.h"
 #include "gdt.h"
 #include "elf.h"
-#include"paging_defs.h"
+#include "paging_defs.h"
+#include "./libc/klib/string.h"
 extern struct segment_desc gdt[NUMSEG];
 #define NULL (void *)0x0
 void kpanic(char *);
 void dump(char *);
 int strcmp(char *, char *);
-inline void bochs_bp(void);
-void memcpy(char *, char *, int);
 extern int check_longmode();
 
 void
-enter_x64_kern(void *entry, uint64_t *pgtab_tmp){
-	void (*efptr)() = entry;
+enter_x64_kern(volatile void * entry, uint64_t *pgtab_tmp){
+	volatile void (*efptr)() = entry;
+	asm ("xchg %bx, %bx");
 	if(!check_longmode()){
 		dump("longmode ok!!!!!!!");
+		asm ("xchg %bx, %bx");
 		efptr();
 	} else {
 		dump("64-bit not available on this processor!!");
@@ -26,15 +27,13 @@ enter_x64_kern(void *entry, uint64_t *pgtab_tmp){
 void
 kload_main(const void* mboot_struct){
 	uint64_t pml4_tmp[NENTRIES];
-	
-	//set up 32bitGDT (GDTR is undefined according to multiboot spec)
 	init_segments();
 	lgdt(gdt, sizeof(gdt));
 	loadsegs();
 	//following several lines courtesy of OSDEV WIKI
 	const multiboot_info_t* mb_info = mboot_struct;
 	multiboot_uint32_t mb_flags = mb_info->flags;
-	void *main64 = NULL;
+	volatile void *main64 = NULL;
 	multiboot_module_t* module = (multiboot_module_t*) 0x0;
 	if (mb_flags & MULTIBOOT_INFO_MODS){
 		multiboot_uint32_t mods_count = mb_info->mods_count;
@@ -42,39 +41,19 @@ kload_main(const void* mboot_struct){
 		for (uint32_t mod = 0; mod < mods_count; mod++){
 			 module = 
 				(multiboot_module_t*)(mods_addr + (mod * sizeof(multiboot_module_t)));
-				if (strcmp((char *)module->cmdline, "KERN64.BIN")){
-					main64 = load_elf(module->mod_start, module->mod_end);
-				}
+			
+			asm ("xchg %bx, %bx");
+			if (strcmp((char *)module->cmdline, "KERN64.BIN")){
+				main64 = load_elf(module->mod_start, module->mod_end);
+				asm ("xchg %bx, %bx");
+			}
 		}
-	
 	}
-	enter_x64_kern(main64, pgtab_tmp);
+	//end
+	enter_x64_kern(main64, pml4_tmp);
 	return;
 }
-
-int
-strcmp(char *l, char *r){
-	unsigned char *p1 = l, *p2 = r;
-	while (*p1 == *p2){
-		p1++;
-		p2++;
-	}
-	return (*p1)-(*p2);
-}
-
-void
-memcpy(char* dest, char *src, int len){
-	for (int i = 0; i < len; i++){
-		dest[i] = src[i];
-	 }
-return;
-}
-void
-kpanic(char *msg){
-	dump(msg);
-	while(1);
-}
-//TODO write a goddamn terminal controller
+//lazy dump program, write proper term controller for x64 code
 void
 dump(char *msg){
 	char * vga = (char *) 0xB8000;
@@ -83,11 +62,5 @@ dump(char *msg){
 		vga[i*2] = msg[i];
 		i++;
 	}
-	return;
-}
-
-inline void
-bochs_bp(void){
-	asm("xchg %bx, %bx");
 	return;
 }
