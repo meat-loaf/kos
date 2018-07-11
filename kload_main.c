@@ -3,6 +3,7 @@
 #include "elf.h"
 #include "paging_defs.h"
 #include "./libc/klib/string.h"
+#define CONST_TMP_ADDR 0x200000
 extern struct segment_desc gdt[NUMSEG];
 #define NULL (void *)0x0
 void kpanic(char *);
@@ -11,8 +12,10 @@ int strcmp(char *, char *);
 extern int check_longmode();
 
 void
-enter_x64_kern(volatile void * entry, uint64_t *pgtab_tmp){
-	volatile void (*efptr)() = entry;
+enter_x64_kern(void * entry, pde_t *pgtab_tmp){
+	//void (*efptr)() = entry;
+	void (*efptr)();
+	efptr = (void (*)(void))entry;
 	asm ("xchg %bx, %bx");
 	if(!check_longmode()){
 		dump("longmode ok!!!!!!!");
@@ -26,14 +29,19 @@ enter_x64_kern(volatile void * entry, uint64_t *pgtab_tmp){
 
 void
 kload_main(const void* mboot_struct){
-	uint64_t pml4_tmp[NENTRIES];
+	pde_t pml4_tmp[NENTRIES] = {0};
+	pml4_tmp[0] = 0 & PTE_P;
+	pde_t pdpe = 0 & PTE_P;
+	pde_t pde = 0 & PTE_P;
+	pde_t pte[NENTRIES]
 	init_segments();
 	lgdt(gdt, sizeof(gdt));
 	loadsegs();
+	set_tmp_paging();
 	//following several lines courtesy of OSDEV WIKI
 	const multiboot_info_t* mb_info = mboot_struct;
 	multiboot_uint32_t mb_flags = mb_info->flags;
-	volatile void *main64 = NULL;
+	void *main64 = NULL;
 	multiboot_module_t* module = (multiboot_module_t*) 0x0;
 	if (mb_flags & MULTIBOOT_INFO_MODS){
 		multiboot_uint32_t mods_count = mb_info->mods_count;
@@ -42,10 +50,8 @@ kload_main(const void* mboot_struct){
 			 module = 
 				(multiboot_module_t*)(mods_addr + (mod * sizeof(multiboot_module_t)));
 			
-			asm ("xchg %bx, %bx");
 			if (strcmp((char *)module->cmdline, "KERN64.BIN")){
 				main64 = load_elf(module->mod_start, module->mod_end);
-				asm ("xchg %bx, %bx");
 			}
 		}
 	}
@@ -53,7 +59,7 @@ kload_main(const void* mboot_struct){
 	enter_x64_kern(main64, pml4_tmp);
 	return;
 }
-//lazy dump program, write proper term controller for x64 code
+//lazy dump, write proper term controller for x64 code
 void
 dump(char *msg){
 	char * vga = (char *) 0xB8000;
@@ -64,3 +70,4 @@ dump(char *msg){
 	}
 	return;
 }
+
